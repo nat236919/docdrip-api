@@ -20,10 +20,12 @@ class Config(BaseModel):
     APP_TITLE: str = 'DocDrip API'
     APP_DESCRIPTION: str = 'API for converting documents to markdown format'
 
-    APP_VERSION: str = os.getenv('APP_VERSION')
-    APP_HOST: str = os.getenv('APP_HOST')
-    APP_PORT: str = os.getenv('APP_PORT')
-    APP_SECRET_KEY: str = os.getenv('APP_SECRET_KEY')
+    APP_VERSION: str = os.getenv('APP_VERSION', '0.0.1')
+    APP_HOST: str = os.getenv('APP_HOST', '0.0.0.0')
+    APP_PORT: str = os.getenv('APP_PORT', '8000')
+    APP_SECRET_KEY: str = os.getenv(
+        'APP_SECRET_KEY', 'your-secret-key-change-in-production'
+    )
 
     @property
     def APP_DEBUG(self) -> bool:
