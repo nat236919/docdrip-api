@@ -1,8 +1,16 @@
 import io
 import logging
 from pathlib import Path
+from typing import List
 
 from fastapi import UploadFile
+
+from models.document_model import (
+    FileMetadata,
+    ProcessDocumentResponse,
+    ProcessingInfo,
+    ValidationResponse
+)
 
 
 logger = logging.getLogger(__name__)
@@ -24,15 +32,17 @@ class DocumentMixinService:
     # Public Methods
     # ========================================
 
-    async def process_document(self, file: UploadFile) -> dict:
+    async def process_document(
+        self, file: UploadFile
+    ) -> ProcessDocumentResponse:
         """Process a document file.
 
         Args:
             file (UploadFile): The uploaded file to process.
 
         Returns:
-            dict: A dictionary containing the converted markdown content,
-                file metadata, and processing information.
+            ProcessDocumentResponse: A response containing the converted
+                markdown content, file metadata, and processing information.
 
         Raises:
             ValueError: If the file is invalid or unsupported.
@@ -89,15 +99,17 @@ class DocumentMixinService:
             # Get file metadata
             file_metadata = await self._get_file_metadata(file)
 
-            result = {
-                'markdown': result.text_content.strip(),
-                'metadata': file_metadata,
-                'processing_info': {
-                    'supported_formats': self.get_supported_extensions(),
-                    'max_file_size_mb': self.MAX_FILE_SIZE / (1024 * 1024),
-                    'conversion_successful': True
-                }
-            }
+            processing_info = ProcessingInfo(
+                supported_formats=self.get_supported_extensions(),
+                max_file_size_mb=self.MAX_FILE_SIZE / (1024 * 1024),
+                conversion_successful=True
+            )
+
+            result = ProcessDocumentResponse(
+                markdown=result.text_content.strip(),
+                metadata=file_metadata,
+                processing_info=processing_info
+            )
 
             logger.info(f'Successfully processed document: {file.filename}')
             return result
@@ -108,44 +120,43 @@ class DocumentMixinService:
             )
             raise Exception(f'Error during conversion: {str(e)}')
 
-    def validate_document(self, file: UploadFile) -> dict:
+    def validate_document(self, file: UploadFile) -> ValidationResponse:
         """Validate a document without processing it.
 
         Args:
             file (UploadFile): The uploaded file to validate.
 
         Returns:
-            dict: Validation result with status and details.
+            ValidationResponse: Validation result with status and details.
         """
         if not file or not file.filename:
-            return {
-                'is_valid': False,
-                'error': 'File must be provided with a valid filename.',
-                'supported_formats': self.get_supported_extensions()
-            }
+            return ValidationResponse(
+                is_valid=False,
+                error='File must be provided with a valid filename.',
+            )
 
         is_supported = self._is_file_supported(file.filename)
 
         error_msg = None
         if not is_supported:
-            supported_formats = ", ".join(self.get_supported_extensions())
+            supported_formats = ', '.join(self.get_supported_extensions())
             error_msg = (
                 f'Unsupported file format. '
                 f'Supported formats: {supported_formats}'
             )
 
-        return {
-            'is_valid': is_supported,
-            'filename': file.filename,
-            'is_supported_format': is_supported,
-            'error': error_msg
-        }
+        return ValidationResponse(
+            is_valid=is_supported,
+            filename=file.filename,
+            is_supported_format=is_supported,
+            error=error_msg
+        )
 
-    def get_supported_extensions(self) -> list:
+    def get_supported_extensions(self) -> List[str]:
         """Get a list of supported file extensions.
 
         Returns:
-            list: Supported file extensions.
+            List[str]: Supported file extensions.
         """
         return sorted(self.SUPPORTED_EXTENSIONS)
 
@@ -153,14 +164,14 @@ class DocumentMixinService:
     # Private Methods
     # ========================================
 
-    async def _get_file_metadata(self, file: UploadFile) -> dict:
+    async def _get_file_metadata(self, file: UploadFile) -> FileMetadata:
         """Extract metadata from the uploaded file.
 
         Args:
             file (UploadFile): The uploaded file.
 
         Returns:
-            dict: File metadata including name, size, and type information.
+            FileMetadata: File metadata including name, size, and type info.
         """
         # Get file size
         file_content = await file.read()
@@ -169,16 +180,16 @@ class DocumentMixinService:
         # Reset file position
         await file.seek(0)
 
-        return {
-            'filename': file.filename,
-            'size_bytes': file_size,
-            'size_mb': round(file_size / (1024 * 1024), 2),
-            'file_extension': (
+        return FileMetadata(
+            filename=file.filename,
+            size_bytes=file_size,
+            size_mb=round(file_size / (1024 * 1024), 2),
+            file_extension=(
                 file.filename.split('.')[-1].lower()
                 if '.' in file.filename else ''
             ),
-            'is_supported': self._is_file_supported(file.filename)
-        }
+            is_supported=self._is_file_supported(file.filename)
+        )
 
     def _is_file_supported(self, filename: str) -> bool:
         """Check if the file extension is supported.
