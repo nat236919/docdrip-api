@@ -36,20 +36,8 @@ async def convert_document_to_markdown(file: UploadFile) -> dict:
             or if there is an error during conversion.
     """
     try:
-        # Pre-validate file support
-        if not core_service.is_file_supported(file.filename):
-            supported = core_service.get_supported_extensions()
-            supported_str = ", ".join(supported)
-            raise ValueError(
-                f'Unsupported file format. Supported formats: {supported_str}'
-            )
-
-        markdown_content = await core_service.convert_file_to_markdown(file)
-        return {
-            'markdown': markdown_content,
-            'filename': file.filename,
-            'supported_formats': core_service.get_supported_extensions()
-        }
+        result = await core_service.process_document(file)
+        return result
 
     except ValueError as e:
         raise HTTPException(
@@ -60,4 +48,24 @@ async def convert_document_to_markdown(file: UploadFile) -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f'Error converting document: {str(e)}',
+        )
+
+
+@api_document_router.post('/validate', status_code=status.HTTP_200_OK)
+async def validate_document(file: UploadFile) -> dict:
+    """Validate a document without processing it.
+
+    Args:
+        file (UploadFile): The uploaded file to validate.
+
+    Returns:
+        dict: Validation result with status and details.
+    """
+    try:
+        validation_result = core_service.validate_document(file)
+        return validation_result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'Error validating document: {str(e)}',
         )
