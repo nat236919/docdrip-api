@@ -28,7 +28,8 @@ class Config(BaseModel):
     @property
     def APP_DEBUG(self) -> bool:
         if isinstance(self._app_debug, str):
-            return self._app_debug.lower() in ('true', '1', 't', 'y', 'yes')
+            true_str_values = ('true', '1', 't', 'y', 'yes')
+            return self._app_debug.lower().strip() in true_str_values
         return self._app_debug
 
 
