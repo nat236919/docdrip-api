@@ -24,7 +24,7 @@ class Config(BaseModel):
     APP_HOST: str = os.getenv('APP_HOST', '0.0.0.0')
     APP_PORT: str = os.getenv('APP_PORT', '8000')
     APP_SECRET_KEY: str = os.getenv(
-        'APP_SECRET_KEY', 'your-secret-key-change-in-production'
+        'APP_SECRET_KEY', 'your-secret-key-here-change-this-in-production'
     )
 
     @property

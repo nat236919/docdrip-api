@@ -1,17 +1,24 @@
 """Tests for document API router."""
 
+import io
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
-import io
 
 from main import app
+from configs.config import SETTINGS
 
 
 @pytest.fixture
 def client():
     """Test client for the FastAPI app."""
     return TestClient(app)
+
+
+@pytest.fixture
+def authenticated_client():
+    """Test client with authentication headers."""
+    return TestClient(app, headers={'X-API-Key': SETTINGS.APP_SECRET_KEY})
 
 
 @pytest.fixture
@@ -25,9 +32,9 @@ def mock_file():
 class TestGetSupportedFormats:
     """Tests for the get supported formats endpoint."""
 
-    def test_get_supported_formats(self, client):
+    def test_get_supported_formats(self, authenticated_client):
         """Test getting supported formats returns correct structure."""
-        response = client.get('/v1/documents/supported-formats')
+        response = authenticated_client.get('/v1/documents/supported-formats')
 
         assert response.status_code == 200
         assert response.headers['content-type'] == 'application/json'
@@ -47,13 +54,13 @@ class TestGetSupportedFormats:
 
     @patch('routers.v1.documents.api_document_router.core_service')
     def test_get_supported_formats_service_integration(
-        self, mock_service, client
+        self, mock_service, authenticated_client
     ):
         """Test service integration for supported formats."""
         mock_service.get_supported_extensions.return_value = ['.pdf', '.txt']
         mock_service.MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
-        response = client.get('/v1/documents/supported-formats')
+        response = authenticated_client.get('/v1/documents/supported-formats')
 
         assert response.status_code == 200
         data = response.json()
@@ -66,7 +73,9 @@ class TestConvertDocument:
     """Tests for the convert document endpoint."""
 
     @patch('routers.v1.documents.api_document_router.core_service')
-    def test_convert_document_success(self, mock_service, client, mock_file):
+    def test_convert_document_success(
+        self, mock_service, authenticated_client, mock_file
+    ):
         """Test successful document conversion."""
         from models.document_model import (
             ProcessDocumentResponse, FileMetadata, ProcessingInfo
@@ -88,7 +97,7 @@ class TestConvertDocument:
         mock_service.process_document = AsyncMock(return_value=mock_response)
 
         files = [mock_file('test.txt', b'test content')]
-        response = client.post('/v1/documents', files=files)
+        response = authenticated_client.post('/v1/documents', files=files)
 
         assert response.status_code == 200
         mock_service.process_document.assert_called_once()
@@ -97,13 +106,15 @@ class TestConvertDocument:
         expected_keys = ['markdown', 'metadata', 'processing_info']
         assert all(key in data for key in expected_keys)
 
-    def test_convert_document_no_file(self, client):
+    def test_convert_document_no_file(self, authenticated_client):
         """Test conversion without file returns 422."""
-        response = client.post('/v1/documents')
+        response = authenticated_client.post('/v1/documents')
         assert response.status_code == 422
 
     @patch('routers.v1.documents.api_document_router.core_service')
-    def test_convert_document_errors(self, mock_service, client, mock_file):
+    def test_convert_document_errors(
+        self, mock_service, authenticated_client, mock_file
+    ):
         """Test conversion error handling."""
 
         # Test ValueError (400)
@@ -111,7 +122,7 @@ class TestConvertDocument:
             side_effect=ValueError('Invalid file format')
         )
         files = [mock_file('test.xyz')]
-        response = client.post('/v1/documents', files=files)
+        response = authenticated_client.post('/v1/documents', files=files)
         assert response.status_code == 400
         assert 'Invalid file format' in response.json()['detail']
 
@@ -120,7 +131,7 @@ class TestConvertDocument:
             side_effect=Exception('Processing failed')
         )
         files = [mock_file('test.txt')]
-        response = client.post('/v1/documents', files=files)
+        response = authenticated_client.post('/v1/documents', files=files)
         assert response.status_code == 500
         assert 'Error converting document' in response.json()['detail']
 
@@ -129,7 +140,9 @@ class TestValidateDocument:
     """Tests for the validate document endpoint."""
 
     @patch('routers.v1.documents.api_document_router.core_service')
-    def test_validate_document_success(self, mock_service, client, mock_file):
+    def test_validate_document_success(
+        self, mock_service, authenticated_client, mock_file
+    ):
         """Test successful document validation."""
         from models.document_model import ValidationResponse
 
@@ -140,7 +153,9 @@ class TestValidateDocument:
         mock_service.validate_document.return_value = mock_response
 
         files = [mock_file('test.pdf')]
-        response = client.post('/v1/documents/validate', files=files)
+        response = authenticated_client.post(
+            '/v1/documents/validate', files=files
+        )
 
         assert response.status_code == 200
         mock_service.validate_document.assert_called_once()
@@ -153,7 +168,9 @@ class TestValidateDocument:
         assert 'content-type' in response.headers
 
     @patch('routers.v1.documents.api_document_router.core_service')
-    def test_validate_document_invalid(self, mock_service, client, mock_file):
+    def test_validate_document_invalid(
+        self, mock_service, authenticated_client, mock_file
+    ):
         """Test validation of unsupported document format."""
         from models.document_model import ValidationResponse
 
@@ -164,21 +181,23 @@ class TestValidateDocument:
         mock_service.validate_document.return_value = mock_response
 
         files = [mock_file('test.xyz')]
-        response = client.post('/v1/documents/validate', files=files)
+        response = authenticated_client.post(
+            '/v1/documents/validate', files=files
+        )
 
         assert response.status_code == 200
         data = response.json()
         assert data['is_valid'] is False
         assert 'Unsupported file format' in data['error']
 
-    def test_validate_document_no_file(self, client):
+    def test_validate_document_no_file(self, authenticated_client):
         """Test validation without file returns 422."""
-        response = client.post('/v1/documents/validate')
+        response = authenticated_client.post('/v1/documents/validate')
         assert response.status_code == 422
 
     @patch('routers.v1.documents.api_document_router.core_service')
     def test_validate_document_server_error(
-        self, mock_service, client, mock_file
+        self, mock_service, authenticated_client, mock_file
     ):
         """Test validation with server error returns 500."""
         mock_service.validate_document.side_effect = Exception(
@@ -186,7 +205,9 @@ class TestValidateDocument:
         )
 
         files = [mock_file('test.txt')]
-        response = client.post('/v1/documents/validate', files=files)
+        response = authenticated_client.post(
+            '/v1/documents/validate', files=files
+        )
 
         assert response.status_code == 500
         data = response.json()
@@ -196,21 +217,21 @@ class TestValidateDocument:
 class TestDocumentRouterIntegration:
     """Integration tests for the document router."""
 
-    def test_all_endpoints_accessible(self, client):
+    def test_all_endpoints_accessible(self, authenticated_client):
         """Test that all document endpoints are accessible."""
         # GET endpoint
-        response = client.get('/v1/documents/supported-formats')
+        response = authenticated_client.get('/v1/documents/supported-formats')
         assert response.status_code == 200
 
         # POST endpoints (should return 422 without files, not 404)
         for endpoint in ['/v1/documents', '/v1/documents/validate']:
-            response = client.post(endpoint)
+            response = authenticated_client.post(endpoint)
             assert response.status_code == 422
             assert 'application/json' in response.headers['content-type']
 
-    def test_openapi_documentation_generation(self, client):
+    def test_openapi_documentation_generation(self, authenticated_client):
         """Test that router contributes to OpenAPI docs."""
-        response = client.get('/openapi.json')
+        response = authenticated_client.get('/openapi.json')
         assert response.status_code == 200
 
         paths = response.json().get('paths', {})

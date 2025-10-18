@@ -12,10 +12,9 @@ core_service = CoreService()
 api_document_router = APIRouter(
     prefix='/documents',
     tags=['documents'],
-    # TODO: handle this in app/tests/routers/v1/documents/test_api_document_router.py
-    # dependencies=[
-    #     Depends(CoreService().auth_service.validate_api_key)
-    # ],
+    dependencies=[
+        Depends(CoreService().auth_service.validate_api_key)
+    ],
 )
 
 
