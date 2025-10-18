@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
 from services.core_service import CoreService
 from models.document_model import (
@@ -9,7 +9,14 @@ from models.document_model import (
 
 
 core_service = CoreService()
-api_document_router = APIRouter(prefix='/documents')
+api_document_router = APIRouter(
+    prefix='/documents',
+    tags=['documents'],
+    # TODO: handle this in app/tests/routers/v1/documents/test_api_document_router.py
+    # dependencies=[
+    #     Depends(CoreService().auth_service.validate_api_key)
+    # ],
+)
 
 
 @api_document_router.get(
