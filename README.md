@@ -69,8 +69,7 @@ The API can be configured using environment variables:
 pipenv run fastapi dev ./app/main.py  
 
 # Production mode
-# TODO: Change relative to absolute path
-pipenv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+pipenv run fastapi run --host 0.0.0.0 --port 8000
 ```
 
 ### Authentication
