@@ -14,28 +14,11 @@ class FileMetadata(BaseModel):
     )
 
 
-class ProcessingInfo(BaseModel):
-    """Model for processing information."""
-
-    supported_formats: List[str] = Field(
-        ..., description='List of supported file formats'
-    )
-    max_file_size_mb: float = Field(
-        ..., description='Maximum allowed file size in MB'
-    )
-    conversion_successful: bool = Field(
-        ..., description='Whether conversion was successful'
-    )
-
-
 class ProcessDocumentResponse(BaseModel):
     """Model for document processing response."""
 
     markdown: str = Field(..., description='Converted markdown content')
     metadata: FileMetadata = Field(..., description='File metadata')
-    processing_info: ProcessingInfo = Field(
-        ..., description='Processing information'
-    )
 
 
 class ValidationResponse(BaseModel):

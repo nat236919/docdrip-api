@@ -143,7 +143,6 @@ class TestProcessDocument:
         # Verify
         assert result.markdown == '# Test\n\nConverted content'
         assert result.metadata.filename == 'test.txt'
-        assert result.processing_info.conversion_successful is True
 
     @pytest.mark.asyncio
     async def test_process_no_file(self, service):

@@ -78,7 +78,7 @@ class TestConvertDocument:
     ):
         """Test successful document conversion."""
         from models.document_model import (
-            ProcessDocumentResponse, FileMetadata, ProcessingInfo
+            ProcessDocumentResponse, FileMetadata,
         )
 
         # Create mock response
@@ -86,13 +86,8 @@ class TestConvertDocument:
             filename='test.txt', size_bytes=1024, size_mb=0.001,
             file_extension='txt', is_supported=True
         )
-        processing_info = ProcessingInfo(
-            supported_formats=['.txt', '.pdf'], max_file_size_mb=10.0,
-            conversion_successful=True
-        )
         mock_response = ProcessDocumentResponse(
             markdown='# Test\nContent', metadata=metadata,
-            processing_info=processing_info
         )
         mock_service.process_document = AsyncMock(return_value=mock_response)
 
@@ -103,7 +98,7 @@ class TestConvertDocument:
         mock_service.process_document.assert_called_once()
 
         data = response.json()
-        expected_keys = ['markdown', 'metadata', 'processing_info']
+        expected_keys = ['markdown', 'metadata']
         assert all(key in data for key in expected_keys)
 
     def test_convert_document_no_file(self, authenticated_client):

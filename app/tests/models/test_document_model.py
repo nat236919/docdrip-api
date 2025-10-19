@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from models.document_model import (
     FileMetadata,
-    ProcessingInfo,
     ProcessDocumentResponse,
     ValidationResponse,
     SupportedFormatsResponse
@@ -98,54 +97,6 @@ class TestFileMetadata:
         }
 
 
-class TestProcessingInfo:
-    """Tests for ProcessingInfo model."""
-
-    def test_processing_info_creation(self):
-        """Test creating a valid ProcessingInfo instance."""
-        info = ProcessingInfo(
-            supported_formats=['.pdf', '.txt', '.docx'],
-            max_file_size_mb=10.0,
-            conversion_successful=True
-        )
-
-        assert info.supported_formats == ['.pdf', '.txt', '.docx']
-        assert info.max_file_size_mb == 10.0
-        assert info.conversion_successful is True
-
-    def test_processing_info_required_fields(self):
-        """Test that all fields are required."""
-        with pytest.raises(ValidationError) as excinfo:
-            ProcessingInfo()
-
-        error_details = excinfo.value.errors()
-        required_fields = {error['loc'][0] for error in error_details}
-        expected_fields = {
-            'supported_formats', 'max_file_size_mb', 'conversion_successful'
-        }
-
-        assert required_fields == expected_fields
-
-    def test_processing_info_list_validation(self):
-        """Test that supported_formats must be a list."""
-        with pytest.raises(ValidationError):
-            ProcessingInfo(
-                supported_formats='invalid',
-                max_file_size_mb=10.0,
-                conversion_successful=True
-            )
-
-    def test_processing_info_empty_list(self):
-        """Test ProcessingInfo with empty supported_formats list."""
-        info = ProcessingInfo(
-            supported_formats=[],
-            max_file_size_mb=10.0,
-            conversion_successful=True
-        )
-
-        assert info.supported_formats == []
-
-
 class TestProcessDocumentResponse:
     """Tests for ProcessDocumentResponse model."""
 
@@ -159,21 +110,13 @@ class TestProcessDocumentResponse:
             is_supported=True
         )
 
-        processing_info = ProcessingInfo(
-            supported_formats=['.pdf', '.txt'],
-            max_file_size_mb=10.0,
-            conversion_successful=True
-        )
-
         response = ProcessDocumentResponse(
             markdown='# Test Document\n\nContent here',
             metadata=metadata,
-            processing_info=processing_info
         )
 
         assert response.markdown == '# Test Document\n\nContent here'
         assert response.metadata == metadata
-        assert response.processing_info == processing_info
 
     def test_process_document_response_required_fields(self):
         """Test that all fields are required."""
@@ -182,7 +125,7 @@ class TestProcessDocumentResponse:
 
         error_details = excinfo.value.errors()
         required_fields = {error['loc'][0] for error in error_details}
-        expected_fields = {'markdown', 'metadata', 'processing_info'}
+        expected_fields = {'markdown', 'metadata'}
 
         assert required_fields == expected_fields
 
@@ -193,11 +136,6 @@ class TestProcessDocumentResponse:
             ProcessDocumentResponse(
                 markdown='# Test',
                 metadata='invalid',
-                processing_info=ProcessingInfo(
-                    supported_formats=['.pdf'],
-                    max_file_size_mb=10.0,
-                    conversion_successful=True
-                )
             )
 
 
@@ -321,16 +259,9 @@ class TestModelInteroperability:
             is_supported=True
         )
 
-        processing_info = ProcessingInfo(
-            supported_formats=['.pdf', '.docx', '.txt'],
-            max_file_size_mb=10.0,
-            conversion_successful=True
-        )
-
         response = ProcessDocumentResponse(
             markdown='# Converted Document\n\nContent here',
             metadata=metadata,
-            processing_info=processing_info
         )
 
         # Test JSON serialization
@@ -338,9 +269,7 @@ class TestModelInteroperability:
 
         assert 'markdown' in json_data
         assert 'metadata' in json_data
-        assert 'processing_info' in json_data
         assert json_data['metadata']['filename'] == 'document.pdf'
-        assert json_data['processing_info']['conversion_successful'] is True
 
     def test_model_from_dict(self):
         """Test creating models from dictionaries."""

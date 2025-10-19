@@ -8,7 +8,6 @@ from fastapi import UploadFile
 from models.document_model import (
     FileMetadata,
     ProcessDocumentResponse,
-    ProcessingInfo,
     ValidationResponse
 )
 
@@ -99,16 +98,9 @@ class DocumentMixinService:
             # Get file metadata
             file_metadata = await self._get_file_metadata(file)
 
-            processing_info = ProcessingInfo(
-                supported_formats=self.get_supported_extensions(),
-                max_file_size_mb=self.MAX_FILE_SIZE / (1024 * 1024),
-                conversion_successful=True
-            )
-
             result = ProcessDocumentResponse(
                 markdown=result.text_content.strip(),
                 metadata=file_metadata,
-                processing_info=processing_info
             )
 
             logger.info(f'Successfully processed document: {file.filename}')
