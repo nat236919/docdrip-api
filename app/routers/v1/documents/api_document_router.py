@@ -29,10 +29,23 @@ async def get_supported_formats() -> SupportedFormatsResponse:
     Returns:
         SupportedFormatsResponse: A response containing supported file
             extensions and maximum file size.
+    
+    Raises:
+        HTTPException: If there is an error retrieving supported formats or max file size.
     """
+    try:
+        supported_formats = core_service.get_supported_extensions()
+        max_file_size_mb = core_service.MAX_FILE_SIZE / (1024 * 1024)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'Error retrieving supported formats: {str(e)}',
+        )
+
     return SupportedFormatsResponse(
-        supported_formats=core_service.get_supported_extensions(),
-        max_file_size_mb=core_service.MAX_FILE_SIZE / (1024 * 1024)
+        supported_formats=supported_formats,
+        max_file_size_mb=max_file_size_mb
     )
 
 
@@ -86,6 +99,9 @@ async def validate_document(file: UploadFile) -> ValidationResponse:
 
     Returns:
         ValidationResponse: Validation result with status and details.
+    
+    Raises:
+        HTTPException: If there is an error during validation.
     """
     try:
         validation_result = core_service.validate_document(file)
