@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8001}:${APP_PORT:-8001}"
+    environment:
+      - APP_DEBUG=${APP_DEBUG:-False}
+      - APP_VERSION=${APP_VERSION:-0.0.1}
+      - APP_HOST=${APP_HOST:-0.0.0.0}
+      - APP_PORT=${APP_PORT:-8001}
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-your-secret-key-here-change-this-in-production}
+    volumes:
+      - ./app:/app
+      - uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  uploads:

@@ -23,6 +23,31 @@ DocDrip API provides a simple and efficient way to convert various document form
 
 ## Installation
 
+### Quick Start with Docker
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone <repository-url>
+   cd docdrip-api
+   ```
+
+2. **Set up environment**:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. **Start the application**:
+
+   ```bash
+   docker-compose up -d
+   ```
+
+The API will be available at `http://localhost:8000`
+
+### Local Development Setup
+
 1. **Clone the repository**:
 
    ```bash
@@ -45,7 +70,7 @@ DocDrip API provides a simple and efficient way to convert various document form
 4. **Set up environment variables** (optional):
 
    ```bash
-   cp .env.example .env  # Create from template if available
+   cp .env.example .env
    ```
 
 ## Configuration
@@ -63,6 +88,15 @@ The API can be configured using environment variables:
 ## Usage
 
 ### Starting the Server
+
+#### Option 1: Using Docker (Recommended)
+
+```bash
+# Start with Docker Compose
+docker-compose up -d
+```
+
+#### Option 2: Local Development
 
 ```bash
 # Development mode
