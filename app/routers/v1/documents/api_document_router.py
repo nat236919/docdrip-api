@@ -29,9 +29,10 @@ async def get_supported_formats() -> SupportedFormatsResponse:
     Returns:
         SupportedFormatsResponse: A response containing supported file
             extensions and maximum file size.
-    
+
     Raises:
-        HTTPException: If there is an error retrieving supported formats or max file size.
+        HTTPException: If there is an error retrieving supported formats
+            or max file size.
     """
     try:
         supported_formats = core_service.get_supported_extensions()
@@ -99,7 +100,7 @@ async def validate_document(file: UploadFile) -> ValidationResponse:
 
     Returns:
         ValidationResponse: Validation result with status and details.
-    
+
     Raises:
         HTTPException: If there is an error during validation.
     """
